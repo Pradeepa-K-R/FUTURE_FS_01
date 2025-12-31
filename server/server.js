@@ -12,9 +12,14 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+
+app.use(express.static(path.join(__dirname, '../public')));
+
+
 mongoose.connect(process.env.MONGODB_URI)
 .then(() => console.log("✅ MongoDB Connected Successfully"))
 .catch(err => console.error("❌ MongoDB Connection Error:", err));
+
 
 const messageSchema = new mongoose.Schema({
     name: String,
@@ -24,6 +29,7 @@ const messageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', messageSchema);
 
+
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -32,20 +38,15 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+
 app.post('/api/contact', async (req, res) => {
     const { name, email, message } = req.body;
-
-    if (!name || !email || !message) {
-        return res.status(400).json({ error: "All fields are required." });
-    }
+    if (!name || !email || !message) return res.status(400).json({ error: "All fields are required." });
 
     try {
-       
         const newMessage = new Message({ name, email, message });
         await newMessage.save();
-        console.log("✅ Message saved to DB.");
 
-        
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: process.env.RECEIVER_EMAIL,
@@ -53,14 +54,17 @@ app.post('/api/contact', async (req, res) => {
             text: `Name: ${name}\nEmail: ${email}\nMessage:\n${message}`
         };
         await transporter.sendMail(mailOptions);
-        console.log("✅ Email sent.");
 
-        res.status(200).json({ success: "Message sent successfully!" });
-
+        res.status(200).json({ success: "Message sent!" });
     } catch (error) {
         console.error("Error:", error);
-        res.status(500).json({ error: "Server Error: " + error.message });
+        res.status(500).json({ error: "Server Error" });
     }
+});
+
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 app.listen(PORT, () => {
