@@ -12,17 +12,15 @@ try {
 }
 
 
-const submitBtn = document.querySelector('form button') || document.querySelector('.btn-box .btn');
-const contactForm = document.querySelector('form');
+const submitBtn = document.querySelector('form button');
+const inputs = document.querySelectorAll('input');
+const textarea = document.querySelector('textarea');
 
 if (submitBtn) {
     submitBtn.addEventListener('click', async (e) => {
         e.preventDefault(); 
         
-       
-        const inputs = document.querySelectorAll('input');
-        const textarea = document.querySelector('textarea');
-
+        
         const name = inputs[0].value;
         const email = inputs[1].value;
         const message = textarea.value;
@@ -32,29 +30,43 @@ if (submitBtn) {
             alert("Please fill in all fields!");
             return;
         }
+
+        
         const originalText = submitBtn.innerText;
         submitBtn.innerText = "Sending...";
 
         try {
+            
             const response = await fetch('/api/contact', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, message })
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    name: name, 
+                    email: email, 
+                    message: message 
+                })
             });
 
             const data = await response.json();
 
-            if (response.ok) {
-                alert("✅ Message Sent Successfully!");
-                contactForm.reset();
+            
+            if (response.ok && data.success) {
+                alert("Message Sent Successfully! 🚀");
+            
+                inputs[0].value = "";
+                inputs[1].value = "";
+                textarea.value = "";
             } else {
-                alert("❌ Failed: " + data.error);
+                alert("Failed to send message. Please try again.");
             }
 
         } catch (error) {
-            console.error("Error:", error);
-            alert("❌ Error: Server connection failed.");
+            console.error('Error:', error);
+            alert("Error: Server connection failed.");
         } finally {
+            
             submitBtn.innerText = originalText;
         }
     });
